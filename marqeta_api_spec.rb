@@ -1,4 +1,5 @@
 require "httparty"
+require "pp"
 
 describe "Marqeta Sandbox and APIs" do
   let(:base_uri) { "https://shared-sandbox-api.marqeta.com/v3" }
@@ -111,6 +112,30 @@ describe "Marqeta Sandbox and APIs" do
         }.to_json
         HTTParty.post(uri, options).parsed_response["token"]
       }
+      before(:each) {
+        uri = base_uri + "/gpaorders"
+        options[:body] = {
+          user_token: user_token,
+          amount: "1000",
+          currency_code: "USD",
+          funding_source_token: funding_source_token
+        }.to_json
+        HTTParty.post(uri, options)
+      }
+
+      it "Can simulate an authorization" do
+        uri = base_uri + "/simulate/authorization"
+        options[:body] = {
+          amount: "97",
+          mid: "1234567890",
+          card_token: card_token
+        }.to_json
+        response = HTTParty.post(uri, options).parsed_response
+        expect(response["transaction"]["amount"]).to eq 97
+        expect(response["transaction"]["token"]).to_not be_nil
+      end
+
+
     end
   end
 end
