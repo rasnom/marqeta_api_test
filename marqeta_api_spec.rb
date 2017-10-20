@@ -36,6 +36,7 @@ describe "Marqeta Sandbox and APIs" do
       response = HTTParty.post(uri, options).parsed_response
       expect(response["name"]).to eq "Example Card Product"
       expect(response["active"]).to be true
+      expect(response["token"]).to_not be_nil
     end
 
     it "Can create a Program Funding Source" do
@@ -45,6 +46,16 @@ describe "Marqeta Sandbox and APIs" do
       response = HTTParty.post(uri, options).parsed_response
       expect(response["name"]).to eq "Program Funding"
       expect(response["active"]).to be true
+      expect(response["token"]).to_not be_nil
+    end
+
+    it "Can create a User" do
+      uri = base_uri + "/users"
+      body = {}.to_json
+      options = { basic_auth: auth, headers: headers, body: body }
+      response = HTTParty.post(uri, options).parsed_response
+      expect(response["active"]).to be true
+      expect(response["token"]).to_not be_nil
     end
 
   end
