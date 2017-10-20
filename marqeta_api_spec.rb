@@ -8,7 +8,7 @@ describe "Marqeta Sandbox and APIs" do
   } }
   let(:headers) { { "content-Type" => "application/json" } }
 
-  describe "Basic Operation" do
+  describe "Basic Setup" do
     it "Can detect the sandbox heartbeat" do
       uri = base_uri + "/ping"
       response = HTTParty.get(uri)
@@ -21,15 +21,9 @@ describe "Marqeta Sandbox and APIs" do
         start_date: "2017-01-01",
         name: "Example Card Product",
         config: {
-          fulfillment: {
-            payment_instrument: "VIRTUAL_PAN"
-          },
-          poi: {
-            ecommerce: true
-          },
-          card_life_cycle: {
-            activate_upon_issue: true
-          }
+          fulfillment: { payment_instrument: "VIRTUAL_PAN" },
+          poi: { ecommerce: true },
+          card_life_cycle: { activate_upon_issue: true }
         }
       }.to_json
       options = { basic_auth: auth, headers: headers, body: body }
@@ -57,8 +51,42 @@ describe "Marqeta Sandbox and APIs" do
       expect(response["active"]).to be true
       expect(response["token"]).to_not be_nil
     end
-
   end
 
+  describe "Cards" do
+    let(:card_product_token) {
+      uri = base_uri + "/cardproducts"
+      body =  {
+        start_date: "2017-01-01",
+        name: "Example Card Product",
+        config: {
+          fulfillment: { payment_instrument: "VIRTUAL_PAN" },
+          poi: { ecommerce: true },
+          card_life_cycle: { activate_upon_issue: true }
+        }
+      }.to_json
+      options = { basic_auth: auth, headers: headers, body: body }
+      HTTParty.post(uri, options).parsed_response["token"]
+    }
+    let(:user_token) {
+      uri = base_uri + "/users"
+      body = {}.to_json
+      options = { basic_auth: auth, headers: headers, body: body }
+      HTTParty.post(uri, options).parsed_response["token"]
+    }
 
+    it 'Can create a new Card' do
+      uri = base_uri + "/cards"
+      body =  {
+        card_product_token: card_product_token,
+        user_token: user_token
+      }.to_json
+      options = { basic_auth: auth, headers: headers, body: body }
+      response = HTTParty.post(uri, options).parsed_response
+      expect(response["state"]).to eq "ACTIVE"
+      expect(response["state_reason"]).to eq "New card activated"
+      expect(response["fulfillment_status"]).to eq "ISSUED"
+      expect(response["token"]).to_not be_nil
+    end
+  end
 end
