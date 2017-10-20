@@ -103,7 +103,7 @@ describe "Marqeta Sandbox and APIs" do
       expect(response["token"]).to_not be_nil
     end
 
-    describe "Unrestricted" do
+    describe "Unrestricted Card" do
       let(:card_token) {
         uri = base_uri + "/cards"
         options[:body] =  {
@@ -123,7 +123,7 @@ describe "Marqeta Sandbox and APIs" do
         HTTParty.post(uri, options)
       }
 
-      it "Can simulate an authorization" do
+      it "Can simulate a successful authorization" do
         uri = base_uri + "/simulate/authorization"
         options[:body] = {
           amount: "97",
@@ -131,6 +131,7 @@ describe "Marqeta Sandbox and APIs" do
           card_token: card_token
         }.to_json
         response = HTTParty.post(uri, options).parsed_response
+        expect(response["transaction"]["state"]).to eq "PENDING"
         expect(response["transaction"]["amount"]).to eq 97
         expect(response["transaction"]["token"]).to_not be_nil
       end
