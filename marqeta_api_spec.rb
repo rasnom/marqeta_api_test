@@ -2,11 +2,12 @@ require "httparty"
 
 describe "Marqeta Sandbox and APIs" do
   let(:base_uri) { "https://shared-sandbox-api.marqeta.com/v3" }
-  let(:auth) { {
+  let!(:auth) { {
     username: ENV["MARQETA_SANDBOX_APPLICATION_TOKEN"],
     password: ENV["MARQETA_SANDBOX_MASTER_ACCESS_TOKEN"]
   } }
-  let(:headers) { { "content-Type" => "application/json" } }
+  let!(:headers) { { "content-Type" => "application/json" } }
+  let(:options) { { basic_auth: auth, headers: headers } }
 
   describe "Basic Setup" do
     it "Can detect the sandbox heartbeat" do
@@ -17,7 +18,7 @@ describe "Marqeta Sandbox and APIs" do
 
     it "Can create a Card Product" do
       uri = base_uri + "/cardproducts"
-      body =  {
+      options[:body] =  {
         start_date: "2017-01-01",
         name: "Example Card Product",
         config: {
@@ -26,7 +27,6 @@ describe "Marqeta Sandbox and APIs" do
           card_life_cycle: { activate_upon_issue: true }
         }
       }.to_json
-      options = { basic_auth: auth, headers: headers, body: body }
       response = HTTParty.post(uri, options).parsed_response
       expect(response["name"]).to eq "Example Card Product"
       expect(response["active"]).to be true
@@ -35,8 +35,7 @@ describe "Marqeta Sandbox and APIs" do
 
     it "Can create a Program Funding Source" do
       uri = base_uri + "/fundingsources/program"
-      body = { name: "Program Funding" }.to_json
-      options = { basic_auth: auth, headers: headers, body: body }
+      options[:body] = { name: "Program Funding" }.to_json
       response = HTTParty.post(uri, options).parsed_response
       expect(response["name"]).to eq "Program Funding"
       expect(response["active"]).to be true
@@ -45,8 +44,7 @@ describe "Marqeta Sandbox and APIs" do
 
     it "Can create a User" do
       uri = base_uri + "/users"
-      body = {}.to_json
-      options = { basic_auth: auth, headers: headers, body: body }
+      options[:body] = {}.to_json
       response = HTTParty.post(uri, options).parsed_response
       expect(response["active"]).to be true
       expect(response["token"]).to_not be_nil
@@ -56,7 +54,7 @@ describe "Marqeta Sandbox and APIs" do
   describe "Cards" do
     let(:card_product_token) {
       uri = base_uri + "/cardproducts"
-      body =  {
+      options[:body] =  {
         start_date: "2017-01-01",
         name: "Example Card Product",
         config: {
@@ -65,29 +63,25 @@ describe "Marqeta Sandbox and APIs" do
           card_life_cycle: { activate_upon_issue: true }
         }
       }.to_json
-      options = { basic_auth: auth, headers: headers, body: body }
       HTTParty.post(uri, options).parsed_response["token"]
     }
     let(:user_token) {
       uri = base_uri + "/users"
-      body = {}.to_json
-      options = { basic_auth: auth, headers: headers, body: body }
+      options[:body] = {}.to_json
       HTTParty.post(uri, options).parsed_response["token"]
     }
     let(:funding_source_token) {
       uri = base_uri + "/fundingsources/program"
-      body = { name: "Program Funding" }.to_json
-      options = { basic_auth: auth, headers: headers, body: body }
+      options[:body] = { name: "Program Funding" }.to_json
       HTTParty.post(uri, options).parsed_response["token"]
     }
 
     it "Can create a new Card" do
       uri = base_uri + "/cards"
-      body =  {
+      options[:body] =  {
         card_product_token: card_product_token,
         user_token: user_token
       }.to_json
-      options = { basic_auth: auth, headers: headers, body: body }
       response = HTTParty.post(uri, options).parsed_response
       expect(response["state"]).to eq "ACTIVE"
       expect(response["state_reason"]).to eq "New card activated"
@@ -97,16 +91,26 @@ describe "Marqeta Sandbox and APIs" do
 
     it "Can fund the User's GPA account" do
       uri = base_uri + "/gpaorders"
-      body = {
+      options[:body] = {
         user_token: user_token,
         amount: "1000",
         currency_code: "USD",
         funding_source_token: funding_source_token
       }.to_json
-      options = { basic_auth: auth, headers: headers, body: body }
       response = HTTParty.post(uri, options).parsed_response
       expect(response["amount"]).to eq 1000
       expect(response["token"]).to_not be_nil
+    end
+
+    describe "Unrestricted" do
+      let(:card_token) {
+        uri = base_uri + "/cards"
+        options[:body] =  {
+          card_product_token: card_product_token,
+          user_token: user_token
+        }.to_json
+        HTTParty.post(uri, options).parsed_response["token"]
+      }
     end
   end
 end
