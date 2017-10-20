@@ -74,8 +74,14 @@ describe "Marqeta Sandbox and APIs" do
       options = { basic_auth: auth, headers: headers, body: body }
       HTTParty.post(uri, options).parsed_response["token"]
     }
+    let(:funding_source_token) {
+      uri = base_uri + "/fundingsources/program"
+      body = { name: "Program Funding" }.to_json
+      options = { basic_auth: auth, headers: headers, body: body }
+      HTTParty.post(uri, options).parsed_response["token"]
+    }
 
-    it 'Can create a new Card' do
+    it "Can create a new Card" do
       uri = base_uri + "/cards"
       body =  {
         card_product_token: card_product_token,
@@ -86,6 +92,20 @@ describe "Marqeta Sandbox and APIs" do
       expect(response["state"]).to eq "ACTIVE"
       expect(response["state_reason"]).to eq "New card activated"
       expect(response["fulfillment_status"]).to eq "ISSUED"
+      expect(response["token"]).to_not be_nil
+    end
+
+    it "Can fund the User's GPA account" do
+      uri = base_uri + "/gpaorders"
+      body = {
+        user_token: user_token,
+        amount: "1000",
+        currency_code: "USD",
+        funding_source_token: funding_source_token
+      }.to_json
+      options = { basic_auth: auth, headers: headers, body: body }
+      response = HTTParty.post(uri, options).parsed_response
+      expect(response["amount"]).to eq 1000
       expect(response["token"]).to_not be_nil
     end
   end
