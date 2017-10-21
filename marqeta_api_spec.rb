@@ -136,7 +136,37 @@ describe "Marqeta Sandbox and APIs" do
         expect(response["transaction"]["token"]).to_not be_nil
       end
 
+      describe "Adding Restrictions" do
+        after(:each) do
+          uri = base_uri + "/authcontrols"
+          options[:body] = { user: user_token }
+          response = HTTParty.get(uri, options).parsed_response
+          response["data"].each do | auth_control |
+            if auth_control["active"]
+              uri = base_uri + "/authcontrols/" + auth_control["token"]
+              options[:body] = { active: false }.to_json
+              response = HTTParty.put(uri, options).parsed_response
+            end
+          end
 
+          # uri = base_uri + "/authcontrols/" + general_denial_token
+          # options[:body] = { active: false }.to_json
+          # response = HTTParty.put(uri, options).parsed_response
+          # p response
+        end
+
+        it "Can add a program level restriction" do
+          uri = base_uri + "/authcontrols"
+          options[:body] = {
+            name: "General Rejection",
+            active: true,
+          }.to_json
+          response = HTTParty.post(uri, options).parsed_response
+          expect(response["name"]).to eq "General Rejection"
+          expect(response["active"]).to be true
+          expect(response["token"]).to_not be nil
+        end
+      end
     end
   end
 end
